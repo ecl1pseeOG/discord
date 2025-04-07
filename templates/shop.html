@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eclipse Goodies</title>
+  <link rel="icon" type="image/x-icon" href="https://cdn.discordapp.com/attachments/1358803960466767992/1358828149965586804/standard_30.gif?ex=67f542d4&is=67f3f154&hm=e8f4f86c4ed649e69e770c41b2ca438cf539bc1a7d13cd6f89da184f73a7f47c&">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1e1e2f, #3a1c71, #d76d77, #ffaf7b);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7); /* Darken the background for better contrast */
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: black; /* Change the background color of the modal to black */
+      padding: 2rem;
+      border-radius: 8px;
+      width: 300px;
+      text-align: center;
+      color: white; /* Ensure the text is readable by setting the text color to white */
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    /* Success message */
+    .success-message {
+      display: none;
+      background-color: #28a745;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body class="text-white min-h-screen p-6">
+  <header class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Discord Goodies</h1>
+    <div class="relative flex items-center gap-2">
+      <input id="search" type="text" placeholder="Search items..." class="w-64 text-black px-3 py-2 rounded" />
+    </div>
+    <div class="flex items-center gap-2">
+      <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.5 7h13L17 13M7 13h10"></path>
+      </svg>
+      <span class="text-sm" id="cart-count">0 items</span>
+    </div>
+  </header>
+
+  <main id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <!-- Product cards will be inserted here by JS -->
+  </main>
+
+  <!-- Modal for Discord Username & ID -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <!-- Close Button -->
+      <button id="close-btn" class="close-btn">&times;</button>
+      <h2 class="text-xl font-semibold mb-4">Enter Your Discord Information</h2>
+      <input type="text" id="discord-username" placeholder="Your Discord Username" class="w-full mb-4 px-3 py-2 rounded border" />
+      <input type="text" id="discord-id" placeholder="Your Discord ID" class="w-full mb-4 px-3 py-2 rounded border" />
+      <button id="submit-info" class="w-full bg-purple-600 hover:bg-purple-500 py-2 rounded">Submit</button>
+    </div>
+  </div>
+
+  <!-- Success message -->
+  <div id="success-message" class="success-message">
+    Purchase Successful.
+  </div>
+
+  <script>
+    const webhookURL = "https://discord.com/api/webhooks/1358518844997500944/cnIBTVZzySQDwP4UifWlNPHxneKjLMyHz7bsyUnF9rwDctwcuXhz_0z2LQmSgtncVUDO"; // Replace with your actual webhook URL
+
+
+    const products = [
+      { id: 1, name: "x100 Emoji Pack", price: 0.50, image: "https://mir-s3-cdn-cf.behance.net/project_modules/hd/717754129640633.616f47528ec03.png" },
+      { id: 2, name: "Revenge x SUSHI", price: 2.00, image: "https://media.discordapp.net/attachments/1357064572971913347/1357064667238891530/Untitled-1.png?ex=67f41e75&is=67f2ccf5&hm=4faef3842bc2cd7889ae13db0e5a7c2990931838bd046f39b7319123d1147ff0&=&format=webp&quality=lossless&width=550&height=309" },
+      { id: 3, name: "x1 Crunchy Roll Account", price: 0.10, image: "https://i.pinimg.com/736x/c8/c7/ba/c8c7baacfe2b9f84b0b416a12a50184c.jpg" },
+      { id: 4, name: "Grand Theft Auto Account", price: 9.99, image: "https://rockstarintel.com/wp-content/uploads/2023/08/fivem-purchase-e1699522199340.webp" },
+      { id: 5, name: "Premium Commands", price: 2.99, image: "https://media.discordapp.net/attachments/1358120439846539284/1358151676091039777/standard_27.gif?ex=67f41e50&is=67f2ccd0&hm=d75267765d0daaadc5419c05217ac849e25b235b506f20a49434390f14c7c709&=" },  // New product
+      { id: 6, name: "x230 Emoji Pack", price: 1.20, image: "https://mir-s3-cdn-cf.behance.net/project_modules/hd/717754129640633.616f47528ec03.png" },  // New product
+      { id: 7, name: "Call Of Duty Account", price: 10.49, image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAACoCAMAAABt9SM9AAAAeFBMVEX///8AAADu7u709PTGxsbZ2dnl5eXx8fH8/PwuLi5LS0vDw8Pg4OBmZmaSkpIxMTGwsLDp6enT09OYmJhRUVE5OTmHh4eoqKh0dHQVFRWioqJfX18JCQlpaWmcnJwgICBBQUG3t7d+fn4iIiJZWVk/Pz93d3cZGRkxBraSAAAD/ElEQVR4nO2bfV/yIBRAWWbOqVmZlulTWpbf/xs+7kXdZbBNnYN+nfOXwQUup1JkoBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAv9G4MhCcFhfbGJVVVmIYsdCOKjWMWctC7EtWmLo4pvQVGHkXe5qD5Pmggy4e5ll17VZUrc2KyHxl0Y0hnqdRtWU93MsVO2sXQUKbUg6WPZS+Xty1om3WjZXN3fVn7X2ZPFJpk9c+SdWcoK+mnf/xTH1QFOZC17LQuaxjYiSzzFaxcyQrGbcuSQ+n8q5P0qytZwaZlWdPydCZJUL886N2VrGDWqqzPqnSedkGvNYLcyAoGLcrqVGazqpPyszNZ385kvU9i3v9pA4lWwcQQFLUiKxv5J182diYrS3GtZSNaLU1B7cjKCsVIzmWJ9WdBVmgIOktWOFqMMhZxeGczOrD4NMgKL5A1/JwliM+zKC37vPFfVpTvtaOZWTUsa49495iYU/RQlvwcXmmTjq4ka5Qvv/8tskJZuFt9CDPISrHJEpP+RlZCXtaz6oT3yau9rOjlLeYBWQlSllKT5NVe1k+uIbIqZL0iK4/3srJxHvNlfsry4N/w1jBD32SlZrbTmL5LWel+tSyqJ+uj5b8skYojWfEctQ0Pq6zh28uRhz8oazefUNvvtMrS+QOylEwxmC/lz8luv0+yhJm2ZT0FpQx9k5VOenM72LFuW5btQXNKmo5/stwsHVTpg4aZOldWJ4y52r+hm0VpzCqwsFHnygrmKeId8GxZy3G/v01euV3BF10YWhtldd9y6EsHIw1u0biTZXs2fzgfc/qi1Mg5O6ULUbgN3csyH+h4OlSf/nXHyFl78F9avOv3rB3vxak9HGtdynqcHhjH3117H/GrmUtZxY/EfDouZdWgdVnqWeY6ytchS0NsYmnrA2RdV9YiRSzhkHXIxpezDr9QVmOP75G1B1kxyJJVTcjKXzjo2qt+v6y1ls05slZRxrSryzpUfd+eJkvVkWW6w3AVWfcpokP9mGRNWUee7IfoB6fJmqXp6ac4e3WCmpdlIvJHliU9fbOnyLQZWeq+aqCu37LiDRTDXkExqAlZ4rCigRfltaz0oOOmTlATssJ52TjJOVh/ZWW3ZeTWmI7YObhMll4tSLfqvZW1qhMXiR4vlFXyfDE9q+itrK/jDT/71bbcNcAmZFnvEu6T8VVW/u6obfh5T/Z4sSy1No7ztR9HbtGYZH2X3N4skbW+RNbyToSax9/qXxfEY5KZKlAtS3VMWKqzslArlD/nCMuqqujZmhYbG0cpn6lp/F55ewAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIf8B+X6aygZnIf2AAAAAElFTkSuQmCC" },  // New product
+      { id: 8, name: "Phasmophobia Account", price: 4.99, image: "data:image/jpeg;base64,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" }  // New product
+    ];
+
+    const cart = [];
+    const modal = document.getElementById("modal");
+    const submitButton = document.getElementById("submit-info");
+    const discordUsername = document.getElementById("discord-username");
+    const discordId = document.getElementById("discord-id");
+    const successMessage = document.getElementById("success-message");
+    const closeBtn = document.getElementById("close-btn");
+
+    const updateCartCount = () => {
+      document.getElementById("cart-count").textContent = `${cart.length} items`;
+    };
+
+    const sendToWebhook = (product, username, userId) => {
+      const embed = {
+        title: "New Purchase",
+        description: `${product.name} - €${product.price.toFixed(2)}`,  // Changed currency to EUR
+        fields: [
+          { name: "Discord Username", value: username },
+          { name: "Discord ID", value: userId }
+        ],
+        color: 16711680, // Red color for the embed
+        image: {
+          url: product.image // Add the image URL here
+        }
+      };
+
+      fetch(webhookURL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ embeds: [embed] })
+      }).then(res => console.log("Sent to webhook", res.status));
+    };
+
+    const addToCart = (product) => {
+      cart.push(product);
+      updateCartCount();
+      modal.style.display = "flex"; // Show the modal
+    };
+
+    submitButton.addEventListener("click", () => {
+      const username = discordUsername.value;
+      const userId = discordId.value;
+
+      if (username && userId) {
+        const product = cart[cart.length - 1]; // Get the most recent added product
+        sendToWebhook(product, username, userId);
+        modal.style.display = "none"; // Hide modal after submission
+
+        // Show success message
+        successMessage.style.display = "block";
+
+        // Hide success message after 3 seconds
+        setTimeout(() => {
+          successMessage.style.display = "none";
+        }, 3000);
+      } else {
+        alert("Please provide both username and ID.");
+      }
+    });
+
+    closeBtn.addEventListener("click", () => {
+      modal.style.display = "none"; // Hide the modal when the close button is clicked
+    });
+
+    const renderProducts = (filter = "") => {
+      const grid = document.getElementById("product-grid");
+      grid.innerHTML = "";
+      const filtered = products.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()));
+      filtered.forEach(product => {
+        const card = document.createElement("div");
+        card.className = "rounded-2xl bg-indigo-800 text-white shadow-lg overflow-hidden";
+        card.innerHTML = `
+          <img src="${product.image}" alt="${product.name}" class="h-48 w-full object-cover">
+          <div class="p-4">
+            <h2 class="text-xl font-semibold mb-2">${product.name}</h2>
+            <p class="text-purple-300 mb-4">€${product.price.toFixed(2)}</p> <!-- Changed currency to EUR -->
+            <button class="w-full bg-purple-600 hover:bg-purple-500 py-2 rounded" onclick='addToCart(${JSON.stringify(product)})'>Buy</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    };
+
+    document.getElementById("search").addEventListener("input", (e) => {
+      renderProducts(e.target.value);
+    });
+
+    renderProducts();
+  </script>
+</body>
+</html>
